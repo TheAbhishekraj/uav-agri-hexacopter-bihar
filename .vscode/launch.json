@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flight Controller",
+      "type": "python",
+      "request": "launch", 
+      "program": "${workspaceFolder}/src/hexacopter_control/flight_controller.py"
+    }
+  ]
+}
+

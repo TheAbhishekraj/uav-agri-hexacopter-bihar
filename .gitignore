@@ -1,0 +1,13 @@
+# Build outputs
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+hexacopter-env/
+
+# PX4 logs
+*.ulg
+*.bag

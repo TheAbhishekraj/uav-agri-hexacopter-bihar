@@ -1,0 +1,13 @@
+# Agricultural Drone Configuration
+flight:
+  takeoff_altitude: 10.0
+  spray_speed: 3.0
+  row_spacing: 5.0
+
+yolov8:
+  confidence_threshold: 0.5
+  model_path: "yolov8s.pt"
+
+spray:
+  tank_capacity: 15.0  # liters
+  flow_rate: 0.4       # liters/min
