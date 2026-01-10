@@ -1,4 +1,4 @@
-# Build outputs
+# PX4 Build
 build/
 install/
 log/
@@ -7,7 +7,16 @@ log/
 __pycache__/
 *.pyc
 hexacopter-env/
+.venv/
 
-# PX4 logs
+# Drone Logs
 *.ulg
 *.bag
+*.tlog
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VS Code (keep settings)
+!.vscode/launch.json
