@@ -1,22 +1,9 @@
-# PX4 Build
 build/
 install/
 log/
-
-# Python
 __pycache__/
 *.pyc
+QGroundControl.AppImage
 hexacopter-env/
 .venv/
-
-# Drone Logs
-*.ulg
-*.bag
-*.tlog
-
-# OS
-.DS_Store
-Thumbs.db
-
-# VS Code (keep settings)
-!.vscode/launch.json
+COLCON_IGNORE

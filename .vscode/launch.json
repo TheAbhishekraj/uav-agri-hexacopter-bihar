@@ -1,12 +1,29 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Flight Controller",
-      "type": "python",
-      "request": "launch", 
-      "program": "${workspaceFolder}/src/hexacopter_control/flight_controller.py"
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        
+        
+        {
+            "name": "Flight Controller (ROS 2)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/hexacopter_control/hexacopter_control/flight_controller.py",
+            "console": "integratedTerminal",
+            "python": "/usr/bin/python3",
+            "env": {
+                "PYTHONUNBUFFERED": "1"
+            }
+        },
+        {
+            "name": "Full System Launch",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/opt/ros/jazzy/bin/ros2",
+            "args": [
+                "launch",
+                "${workspaceFolder}/launch/full_system.launch.py"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
 }
-
