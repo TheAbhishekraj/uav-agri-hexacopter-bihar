@@ -16,9 +16,9 @@ def generate_launch_description():
         ),
         # YOLOv8 Object Detection Node
         Node(
-            package='yolov8_detection',
-            executable='detection_node',
-            name='yolov8_detection',
+            package='yolo_weed_detection',
+            executable='weed_detector',
+            name='weed_detector',
             output='screen',
             emulate_tty=True
         ),

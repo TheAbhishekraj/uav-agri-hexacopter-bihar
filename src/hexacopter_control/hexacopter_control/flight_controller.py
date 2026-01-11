@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from px4_msgs.msg import OffboardControlMode, TrajectorySetpoint, VehicleCommand, VehicleOdometry, VehicleStatus
+from std_msgs.msg import Bool
 
 class FlightController(Node):
     """
@@ -36,6 +37,10 @@ class FlightController(Node):
         self.vehicle_status_sub_ = self.create_subscription(
             VehicleStatus, '/fmu/out/vehicle_status', self.vehicle_status_callback, qos_profile)
 
+        # AI Subscriber
+        self.weed_detection_sub_ = self.create_subscription(
+            Bool, '/ai/weed_detected', self.weed_detection_callback, 10)
+
         # Timer (20Hz)
         self.timer_period = 0.05  # seconds
         self.timer_ = self.create_timer(self.timer_period, self.timer_callback)
@@ -51,6 +56,11 @@ class FlightController(Node):
     def listener_callback(self, msg):
         # self.get_logger().info(f'Received odometry: {msg.position}')
         pass
+
+    def weed_detection_callback(self, msg):
+        if msg.data:
+            # In a real drone, this would toggle a GPIO pin for the pump
+            self.get_logger().info("💦 SPRAYER ACTIVATED: Weed Detected!", throttle_duration_sec=2.0)
 
     def timer_callback(self):
         if self.offboard_control_mode_publisher_.get_subscription_count() == 0:

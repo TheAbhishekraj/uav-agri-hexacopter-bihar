@@ -3,8 +3,8 @@
 **Ubuntu 24.04 (Noble) + ROS 2 Jazzy + PX4 SITL + MAVSDK**
 
 ## 🎉 SYSTEM STATUS
-- **PX4 SITL:** 15kg Heavy-Lift Hexacopter
-- **Simulation:** Gazebo Harmonic (gz_x500)
+- **PX4 SITL:** 15kg Heavy-Lift Hexacopter (Manual Flight Verified ✅)
+- **Simulation:** Gazebo Harmonic (gz_x500) - Telemetry Active ✅
 - **Vision:** YOLOv8 Real-time Detection
 - **Control:** Autonomous Grid Spraying
 - **Location:** Munger, Bihar (25.3748°N, 86.4735°E)
