@@ -1,0 +1,44 @@
+name: ROS 2 CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-22.04
+    container:
+      image: ros:humble-ros-base
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: |
+        apt-get update && apt-get install -y python3-pip wget unzip
+        pip3 install -r requirements.txt
+        rosdep update
+        rosdep install --from-paths src --ignore-src -y
+
+    - name: Setup AI Models
+      run: |
+        chmod +x setup_tflite.sh
+        ./setup_tflite.sh
+
+    - name: Build Workspace
+      run: |
+        . /opt/ros/humble/setup.sh
+        colcon build --symlink-install
+
+    - name: Run Tests
+      run: |
+        . /opt/ros/humble/setup.sh
+        . install/setup.sh
+        colcon test
+
+    - name: Verify Test Results
+      run: |
+        colcon test-result --verbose

@@ -1,8 +1,14 @@
 # ROS 2 Learning Journey: From Beginner to Autonomous Drone Developer
 
+**Hi there! 👋**
+Building robots is hard. We made a lot of mistakes so you don't have to! Here is our diary of "Oops!" moments and how we fixed them.
+
 ## 🛑 Mistakes & Fixes (The "Growing Pains")
 
 ### 1. The `ament_cmake` vs `ament_python` Trap
+**The Story:**
+Imagine trying to use wood glue on Lego bricks. It makes a mess and doesn't stick!
+
 **The Error:** `CMake Error: ... does not appear to contain CMakeLists.txt`
 
 **The Context:** We tried to build Python packages (`hexacopter_control`, `yolov8_detection`) but `colcon` treated them as C++ packages.
@@ -14,6 +20,9 @@
 *   **In the file system:** Ensure `setup.py`, `setup.cfg`, and a `resource/<package_name>` marker exist. Remove any stray `CMakeLists.txt` from Python package folders.
 
 ### 2. The "Duplicate Package" Conflict
+**The Story:**
+Imagine having two homework folders with the exact same name. The teacher (compiler) doesn't know which one to grade!
+
 **The Error:** `colcon build: Duplicate package names not supported`
 **The Context:** `colcon` found the same package in `~/Downloads/...` and `~/uav_agricultural_drone_project/...`.
 **The Cause:** Having a backup copy of the project in `Downloads` confused the build tool, as it scans recursively.

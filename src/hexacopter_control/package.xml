@@ -2,13 +2,16 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>hexacopter_control</name>
-  <version>0.0.1</version>
-  <description>Flight controller for agricultural drone</description>
-  <maintainer email="abhishek@example.com">Abhishek</maintainer>
+  <version>0.0.0</version>
+  <description>Our Magic Bihar Agri-Bird Controller</description>
+  <maintainer email="rajabhi2602@gmail.com">abhishek</maintainer>
   <license>Apache-2.0</license>
 
   <depend>rclpy</depend>
   <depend>px4_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>ros_gz_sim</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'detection_node = yolov8_detection.detection_node:main',
+            'thermal_ai = yolov8_detection.thermal_ai_node:main',
         ],
     },
 )

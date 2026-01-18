@@ -1,5 +1,6 @@
 # 🚀 Launch Instructions: Bihar Agricultural Drone
 
+**Welcome, Pilot!** 👨‍✈️👩‍✈️
 This guide details the two methods to launch the system:
 1.  **Automatic (One-Click)** - Recommended for standard missions.
 2.  **Manual (Step-by-Step)** - Recommended for debugging or development.
@@ -17,7 +18,7 @@ This script automates the setup of 4 terminals, sets the Bihar location, and sta
     ```
 2.  Run the launch script:
     ```bash
-    ./launch_drone.sh
+    ./launch_split.sh
     ```
 
 ### What it does:
@@ -32,6 +33,7 @@ This script automates the setup of 4 terminals, sets the Bihar location, and sta
 ## 🟡 Option 2: Manual Launch (Debug Mode)
 
 Use this method if you need to see logs from specific components or restart individual nodes.
+Think of this like starting a car: you turn the key, check the mirrors, and then put it in drive.
 
 ### 🛑 Step 0: Clean Slate
 Run this first to prevent port conflicts:
