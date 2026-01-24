@@ -31,4 +31,9 @@ git commit -m "$COMMIT_MSG"
 
 # Note: This will prompt for your GitHub username and Personal Access Token (PAT) 
 # if you haven't configured SSH keys.
-git push -u origin main
+if git push -u origin main; then
+    echo "✅ Successfully pushed to $REMOTE_URL"
+else
+    echo "❌ Push failed. Please check your internet connection or Personal Access Token."
+    exit 1
+fi
