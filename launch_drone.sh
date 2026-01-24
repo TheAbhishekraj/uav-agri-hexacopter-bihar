@@ -26,14 +26,27 @@ if [ ! -d "$PX4_DIR" ]; then
     exit 1
 fi
 
+# Check for outdated world file (missing crop rows or old sensors config)
+if [ -f "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf" ] && ! grep -q "gz-sim-sensors-system" "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf"; then
+    echo "⚠️  World file outdated (missing sensor plugins). Deleting to regenerate..."
+    rm "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf"
+fi
+
 # Ensure world file exists before symlinking
 if [ ! -f "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf" ]; then
     echo "⚠️  World file missing. Running setup_assets.sh..."
     $WORKSPACE_DIR/setup_assets.sh
 fi
 
+# Ensure hexacopter model exists
+if [ ! -f "$WORKSPACE_DIR/src/hexacopter_control/models/hexacopter_agricultural/model.sdf" ]; then
+    echo "⚠️  Hexacopter model missing! Run setup_assets.sh first."
+    exit 1
+fi
+
 # --- FIX: Symlink World ---
 rm "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf" 2>/dev/null
+rm "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf.sdf" 2>/dev/null
 cp "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf" "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf"
 
 # 1. Micro-XRCE-DDS Agent (New Window)
@@ -50,9 +63,9 @@ cd $PX4_DIR;
 export HEADLESS=0;
 
 # Tell Gazebo where to find the custom Hexacopter & Bihar Farm
-export GZ_SIM_RESOURCE_PATH=$WORKSPACE_DIR/src/hexacopter_control/models:$WORKSPACE_DIR/src/hexacopter_control/worlds:$GZ_SIM_RESOURCE_PATH
+export GZ_SIM_RESOURCE_PATH=$WORKSPACE_DIR/src/hexacopter_control/models:$WORKSPACE_DIR/src/hexacopter_control/worlds:\$GZ_SIM_RESOURCE_PATH
 export PX4_GZ_WORLD=bihar_farm
-export PX4_SIM_MODEL=gz_x500
+export PX4_SIM_MODEL=hexacopter_agricultural
 
 # Set Location to Munger, Bihar
 export PX4_HOME_LAT=25.3748
@@ -77,6 +90,7 @@ fi
 
 gnome-terminal --window --title="QGroundControl" --geometry=80x24+600+0 -- bash -c "
 if [ -f \"$WORKSPACE_DIR/QGroundControl.AppImage\" ]; then
+    echo 'Waiting for PX4 to initialize MAVLink...'; sleep 10;
     echo 'Starting QGC...';
     $WORKSPACE_DIR/QGroundControl.AppImage; 
 else

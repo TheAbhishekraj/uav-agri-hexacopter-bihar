@@ -1,9 +1,15 @@
+# ROS 2 Build System
 build/
 install/
 log/
+
+# Python
 __pycache__/
 *.pyc
-QGroundControl.AppImage
-hexacopter-env/
+venv/
 .venv/
-COLCON_IGNORE
+
+# Large Binaries & Logs
+QGroundControl.AppImage
+*.ulg
+*.bag

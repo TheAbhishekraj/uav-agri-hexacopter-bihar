@@ -18,9 +18,13 @@ if [[ "$VIRTUAL_ENV" != "" ]]; then
 fi
 
 echo "🛑 Killing previous sessions..."
-pkill -f MicroXRCEAgent
-pkill -f px4
-pkill -f gz-sim
+killall -9 gz_sim px4 MicroXRCEAgent ruby QGroundControl flight_controller detection_node mission_commander 2>/dev/null
+
+# Check for outdated world file (missing crop rows or old sensors config)
+if [ -f "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf" ] && ! grep -q "crop_row" "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf"; then
+    echo "⚠️  World file outdated (missing farm visuals). Deleting to regenerate..."
+    rm "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf"
+fi
 
 # Ensure world file exists before symlinking
 if [ ! -f "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf" ]; then
@@ -28,8 +32,15 @@ if [ ! -f "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf" ]; then
     $WORKSPACE_DIR/setup_assets.sh
 fi
 
+# Ensure hexacopter model exists
+if [ ! -f "$WORKSPACE_DIR/src/hexacopter_control/models/hexacopter_agricultural/model.sdf" ]; then
+    echo "⚠️  Hexacopter model missing! Run setup_assets.sh first."
+    exit 1
+fi
+
 # --- FIX: Symlink World ---
 rm "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf" 2>/dev/null
+rm "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf.sdf" 2>/dev/null
 cp "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf" "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf"
 
 # 1. Micro-XRCE-DDS Agent
@@ -45,11 +56,34 @@ source /opt/ros/jazzy/setup.bash;
 cd $PX4_DIR;
 
 # Export paths INSIDE the new terminal session
-export GZ_SIM_RESOURCE_PATH=$WORKSPACE_DIR/src/hexacopter_control/models:$WORKSPACE_DIR/src/hexacopter_control/worlds:$GZ_SIM_RESOURCE_PATH
+export GZ_SIM_RESOURCE_PATH=$WORKSPACE_DIR/src/hexacopter_control/models:$WORKSPACE_DIR/src/hexacopter_control/worlds:\$GZ_SIM_RESOURCE_PATH
 export PX4_GZ_WORLD=bihar_farm
-export PX4_SIM_MODEL=gz_x500
+export PX4_SIM_MODEL=hexacopter_agricultural
+
+# Set Location to Munger, Bihar
+export PX4_HOME_LAT=25.3748
+export PX4_HOME_LON=86.4735
+export PX4_HOME_ALT=45.0
+
 unset LD_LIBRARY_PATH
 make px4_sitl gz_x500 -j2; 
+exec bash"
+
+# 3. QGroundControl (New Window)
+if [ ! -f "$WORKSPACE_DIR/QGroundControl.AppImage" ]; then
+    echo "⚠️ QGroundControl not found. Downloading automatically..."
+    wget https://github.com/mavlink/qgroundcontrol/releases/download/v4.4.2/QGroundControl.AppImage -O "$WORKSPACE_DIR/QGroundControl.AppImage"
+    chmod +x "$WORKSPACE_DIR/QGroundControl.AppImage"
+fi
+
+gnome-terminal --window --title="QGroundControl" --geometry=80x24+600+0 -- bash -c "
+if [ -f \"$WORKSPACE_DIR/QGroundControl.AppImage\" ]; then
+    echo 'Waiting for PX4 SITL...'; sleep 10;
+    echo 'Starting QGC...';
+    $WORKSPACE_DIR/QGroundControl.AppImage; 
+else
+    echo '❌ QGC file missing. Check internet connection.';
+fi
 exec bash"
 
 echo "✅ Simulation running. Now press F5 in VS Code to debug your node."
