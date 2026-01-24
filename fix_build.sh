@@ -1,52 +1,52 @@
 #!/bin/bash
 
-BASE_DIR="/home/abhishek/uav_agricultural_drone_project/src"
+WORKSPACE_DIR=~/uav_agricultural_drone_project
+SRC_DIR=$WORKSPACE_DIR/src
 
-# Function to setup python package
-setup_pkg() {
-    PKG_NAME=$1
-    PKG_DIR="$BASE_DIR/$PKG_NAME"
+echo "🧹 Starting Level 1 Cleanup: Enforcing ament_python..."
+
+# Find all directories in src that have a setup.py (Implying they are Python packages)
+find "$SRC_DIR" -name "setup.py" -print0 | while IFS= read -r -d '' setup_file; do
+    pkg_dir=$(dirname "$setup_file")
     
-    echo "Configuring $PKG_NAME..."
+    # Extract accurate package name from package.xml
+    if [ -f "$pkg_dir/package.xml" ]; then
+        pkg_name=$(grep "<name>" "$pkg_dir/package.xml" | sed -e 's/.*<name>\(.*\)<\/name>.*/\1/' | tr -d '[:space:]')
+    else
+        pkg_name=$(basename "$pkg_dir")
+    fi
     
-    # 1. Fix Directory Structure (Move scripts into module folder)
-    if [ ! -d "$PKG_DIR/$PKG_NAME" ]; then
-        echo "  Creating module directory $PKG_DIR/$PKG_NAME..."
-        mkdir -p "$PKG_DIR/$PKG_NAME"
-        touch "$PKG_DIR/$PKG_NAME/__init__.py"
+    echo "   🔧 Fixing Python Package: $pkg_name"
+
+    # 1. Remove stray CMakeLists.txt (The "Wood Glue")
+    if [ -f "$pkg_dir/CMakeLists.txt" ]; then
+        echo "      - Removing conflicting CMakeLists.txt"
+        rm "$pkg_dir/CMakeLists.txt"
     fi
 
-    # Move all .py files except setup.py into the module directory
-    find "$PKG_DIR" -maxdepth 1 -name "*.py" ! -name "setup.py" -exec mv {} "$PKG_DIR/$PKG_NAME/" \;
-
-    # Create setup.cfg
-    cat > "$PKG_DIR/setup.cfg" << EOF
-[develop]
-script_dir=\$base/lib/$PKG_NAME
-[install]
-install_scripts=\$base/lib/$PKG_NAME
-EOF
-
-    # Create resource directory and marker
-    mkdir -p "$PKG_DIR/resource"
-    touch "$PKG_DIR/resource/$PKG_NAME"
-    
-    # Ensure package.xml uses ament_python
-    if [ -f "$PKG_DIR/package.xml" ]; then
-        if grep -q "ament_cmake" "$PKG_DIR/package.xml"; then
-            echo "  Switching package.xml to ament_python..."
-            sed -i 's/ament_cmake/ament_python/g' "$PKG_DIR/package.xml"
+    # 2. Fix package.xml build_type (The "Sticker")
+    if [ -f "$pkg_dir/package.xml" ]; then
+        # Replace ament_cmake with ament_python
+        if grep -q "ament_cmake" "$pkg_dir/package.xml"; then
+            echo "      - Updating package.xml to ament_python"
+            sed -i 's/ament_cmake/ament_python/g' "$pkg_dir/package.xml"
         fi
     fi
-}
 
-# Setup Python packages
-setup_pkg "hexacopter_camera"
-setup_pkg "hexacopter_control"
-setup_pkg "yolov8_detection"
-setup_pkg "sensor_fusion"
+    # 3. Create Resource Marker (The "Flag")
+    # ROS 2 needs an empty file in resource/<pkg_name> to find the package at runtime
+    if [ ! -d "$pkg_dir/resource" ]; then
+        echo "      - Creating resource directory"
+        mkdir -p "$pkg_dir/resource"
+    fi
+    
+    if [ ! -f "$pkg_dir/resource/$pkg_name" ]; then
+        echo "      - Creating resource marker: resource/$pkg_name"
+        touch "$pkg_dir/resource/$pkg_name"
+    fi
 
-echo "✅ Build structure fixed."
-echo "⚠️  Run these commands to rebuild:"
-echo "  rm -rf build/ install/ log/"
-echo "  colcon build --symlink-install"
+done
+
+echo "✨ Cleanup Complete."
+echo "👉 Now run: ./verify_workspace.py"
+echo "👉 Then run: colcon build --symlink-install"

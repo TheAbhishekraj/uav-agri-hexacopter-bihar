@@ -26,7 +26,7 @@ This script automates the setup of 4 terminals, sets the Bihar location, and sta
 *   **Starts** Micro-XRCE-DDS Agent.
 *   **Starts** PX4 SITL (Gazebo) at Munger, Bihar coordinates.
 *   **Starts** QGroundControl.
-*   **Waits** 15 seconds, then runs the `mission_sprayer.py` node.
+*   **Waits** 15 seconds, then runs the `mission_commander` node.
 
 ---
 
@@ -72,7 +72,7 @@ source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 
 # Run the Z-Pattern Mission
-python3 src/hexacopter_control/hexacopter_control/mission_sprayer.py
+ros2 run hexacopter_control mission_commander
 ```
 
 ---

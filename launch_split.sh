@@ -1,105 +1,75 @@
 #!/bin/bash
 
-# Project Paths
-WORKSPACE_DIR=~/uav_agricultural_drone_project
-PX4_DIR=~/PX4-Autopilot
+# Bihar Agricultural Drone - Launch Script
+# Handles environment cleanup and multi-terminal launch
 
-# Detect ROS Distro (Humble vs Jazzy)
-if [ -f /opt/ros/jazzy/setup.bash ]; then
-    ROS_DISTRO="jazzy"
-elif [ -f /opt/ros/humble/setup.bash ]; then
-    ROS_DISTRO="humble"
-else
-    echo "❌ No supported ROS 2 distro found (checked jazzy, humble)."
-    exit 1
-fi
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$DIR"
 
-# Safety Check: Ensure not in virtual environment
+# --- FIX: Sanitize Environment ---
+# Unset LD_LIBRARY_PATH to prevent gnome-terminal "symbol lookup error" (GLIBC conflict)
+unset LD_LIBRARY_PATH
+unset LD_PRELOAD
+unset GTK_PATH
+unset GIO_EXTRA_MODULES
+
+# Deactivate virtual environment if present
 if [[ "$VIRTUAL_ENV" != "" ]]; then
-    echo "⚠️  Virtual Environment detected ($VIRTUAL_ENV). Deactivating for this script..."
     PATH=${PATH/$VIRTUAL_ENV\/bin:/}
     unset VIRTUAL_ENV
 fi
 
-# --- ENVIRONMENT SYNC (Added per Audit) ---
-# Add local models and worlds to Gazebo's search path
-export GAZEBO_MODEL_PATH="$WORKSPACE_DIR/src/hexacopter_control/models:$WORKSPACE_DIR/src/hexacopter_control/worlds:$GAZEBO_MODEL_PATH"
-export GAZEBO_RESOURCE_PATH="$WORKSPACE_DIR/src/hexacopter_control/models:$WORKSPACE_DIR/src/hexacopter_control/worlds:$GAZEBO_RESOURCE_PATH"
+# 1. Cleanup
+echo "🧹 Cleaning up previous sessions..."
+killall -9 gz_sim px4 MicroXRCEAgent ruby QGroundControl flight_controller detection_node mission_commander 2>/dev/null
 
-# Ensure PX4 finds the model if using custom SDFs
-export PX4_SIM_MODEL=hexacopter_agricultural
-
-echo "🌍 Environment Synced: GAZEBO_MODEL_PATH updated."
-
-# 0. Cleanup previous processes
-echo "🛑 Killing previous sessions..."
-# Using killall -9 as requested for a clean slate
-killall -9 gz_sim px4 MicroXRCEAgent ruby QGroundControl.AppImage flight_controller detection_node parameter_bridge 2>/dev/null
-sleep 2
-
-if [ ! -d "$PX4_DIR" ]; then
-    echo "❌ Error: PX4 Directory not found at $PX4_DIR"
-    exit 1
-fi
-
-# 1. Micro-XRCE-DDS Agent (New Window)
-gnome-terminal --window --title="Micro-XRCE-DDS Agent" --geometry=100x24+0+0 -- bash -c "
-echo 'Starting Agent...';
-MicroXRCEAgent udp4 -p 8888; 
-exec bash"
-
-# 2. PX4 SITL (New Tab)
-gnome-terminal --tab --title="PX4 SITL" -- bash -c "
-echo 'Starting PX4 SITL...';
-cd $PX4_DIR;
-export HEADLESS=0;
-
-# Set Location to Munger, Bihar
-export PX4_HOME_LAT=25.3748
-export PX4_HOME_LON=86.4735
-export PX4_HOME_ALT=45.0
-
-make px4_sitl gz_x500_depth; 
-exec bash"
-
-# 3. QGroundControl (New Tab)
-if [ ! -f "$WORKSPACE_DIR/QGroundControl.AppImage" ]; then
-    echo "⚠️ QGroundControl not found. Downloading automatically..."
-    wget https://github.com/mavlink/qgroundcontrol/releases/download/v4.4.2/QGroundControl.AppImage -O "$WORKSPACE_DIR/QGroundControl.AppImage"
-    
-    if [ $? -eq 0 ]; then
-        chmod +x "$WORKSPACE_DIR/QGroundControl.AppImage"
-    else
-        echo "❌ Download failed. QGroundControl will not start."
-    fi
-fi
-
-gnome-terminal --tab --title="QGroundControl" -- bash -c "
-if [ -f \"$WORKSPACE_DIR/QGroundControl.AppImage\" ]; then
-    echo 'Starting QGC...';
-    $WORKSPACE_DIR/QGroundControl.AppImage; 
+# 2. Check for QGroundControl
+if [ ! -f "./QGroundControl.AppImage" ]; then
+    echo "⚠️  QGroundControl.AppImage not found in project root!"
 else
-    echo '❌ QGC file missing. Check internet connection.';
+    chmod +x ./QGroundControl.AppImage
 fi
-exec bash"
 
-# 4. ROS 2 Nodes (New Tab)
-gnome-terminal --tab --title="ROS 2 System" -- bash -c "
-source /opt/ros/$ROS_DISTRO/setup.bash;
-source $WORKSPACE_DIR/install/setup.bash;
-cd $WORKSPACE_DIR;
+# --- FIX: Symlink World to PX4 ---
+# We symlink the custom world to PX4's folder so we can refer to it by name (avoiding path errors)
+source ./setup_project_env.sh
 
-echo '--- Launching ROS 2 Nodes ---';
-echo 'Launching Full System (Flight Controller + Vision + Bridge)...';
-ros2 launch agri_hexacopter full_system.launch.py
-exec bash"
+# Ensure world file exists before symlinking
+if [ ! -f "$HOME/uav_agricultural_drone_project/src/hexacopter_control/worlds/bihar_farm.sdf" ]; then
+    echo "⚠️  World file missing. Running setup_assets.sh..."
+    ./setup_assets.sh
+fi
 
-# 5. RViz2 (New Tab)
-gnome-terminal --tab --title="RViz2" -- bash -c "
-source /opt/ros/$ROS_DISTRO/setup.bash;
-echo 'Starting RViz2...';
-ros2 run rviz2 rviz2;
-exec bash"
+if [ -d "$PX4_DIR/Tools/simulation/gz/worlds" ]; then
+    rm "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf" 2>/dev/null
+    cp "$HOME/uav_agricultural_drone_project/src/hexacopter_control/worlds/bihar_farm.sdf" "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf"
+fi
 
-echo "✅ System launched in separate terminals."
-echo "🎮 For MANUAL FLIGHT: Use QGroundControl Virtual Joysticks after PX4 starts."
+# 3. Launch Components in Gnome Terminal Tabs
+# Note: We explicitly unset VIRTUAL_ENV to avoid Gazebo crashes (See Learning Journey #5)
+
+echo "🚀 Launching Bihar Agricultural Drone System..."
+
+# Note: Updated syntax to avoid deprecated --command warning. 
+# We use '--' to separate arguments for the command executed inside the tab.
+# Splitting into separate windows to prevent tab loading errors in Snap environments.
+
+gnome-terminal --window --title="1. Micro-XRCE-DDS" --geometry=80x24+0+0 -- bash -c "MicroXRCEAgent udp4 -p 8888; exec bash"
+
+gnome-terminal --window --title="2. PX4 SITL (Bihar)" --geometry=80x24+0+350 -- bash -c "source ./setup_project_env.sh; cd \$PX4_DIR; export GZ_SIM_RESOURCE_PATH=\$HOME/uav_agricultural_drone_project/src/hexacopter_control/models:\$HOME/uav_agricultural_drone_project/src/hexacopter_control/worlds:\$GZ_SIM_RESOURCE_PATH; export PX4_GZ_WORLD=bihar_farm; export PX4_SIM_MODEL=gz_x500; export PX4_HOME_LAT=25.3748; export PX4_HOME_LON=86.4735; export PX4_HOME_ALT=45.0; unset LD_LIBRARY_PATH; make px4_sitl gz_x500 -j2; exec bash"
+
+gnome-terminal --window --title="3. QGroundControl" --geometry=80x24+600+0 -- bash -c "./QGroundControl.AppImage; exec bash"
+
+MISSION_SCRIPT="src/hexacopter_control/hexacopter_control/mission_sprayer.py"
+if [ ! -f "$MISSION_SCRIPT" ]; then
+    # Fallback to root if not found in package
+    MISSION_SCRIPT="mission_sprayer.py"
+fi
+
+gnome-terminal --window --title="4. ROS 2 Mission" --geometry=80x24+600+350 -- bash -c "for i in {15..1}; do echo \"⏳ Mission Start in \$i...\"; sleep 1; done; source /opt/ros/jazzy/setup.bash; source install/setup.bash; python3 $MISSION_SCRIPT; exec bash"
+
+echo "✅ Launch sequence initiated."
+echo "   - Window 1: DDS Agent (Bridge)"
+echo "   - Window 2: PX4 SITL (Simulation)"
+echo "   - Window 3: QGroundControl"
+echo "   - Window 4: Mission Commander (Counting down...)"
