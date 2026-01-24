@@ -52,6 +52,11 @@ pip3 install "numpy<2" ultralytics
 ### 6. The QGroundControl Download
 **The Lesson:** Never use the AWS CloudFront link (`d176tv9ibo4jval...`) for QGroundControl; it is unstable. Always use the official GitHub Releases link.
 
+### 7. The Stubbornness of PX4 Paths
+**The Error:** Gazebo showing a blank screen despite the world file existing.
+**The Discovery:** PX4's internal startup scripts are hardcoded to look for worlds in a specific relative path. If you give it an absolute path, it mashes them together, creating a broken link.
+**The Fix:** Instead of fighting PX4, we "tricked" it. By creating a **Symbolic Link** (`ln -s`) inside the PX4 folder that points to our project, we satisfied PX4's internal logic while keeping our source code organized in our own workspace.
+
 ## ✅ Best Practices (The "Expert" Way)
 
 ### 1. Folder Structure is King

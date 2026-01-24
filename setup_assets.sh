@@ -1,6 +1,6 @@
 #!/bin/bash
 
-WORKSPACE_DIR=~/uav_agricultural_drone_project
+WORKSPACE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PKG_DIR=$WORKSPACE_DIR/src/hexacopter_control
 MODEL_NAME="hexacopter_agricultural"
 MODEL_DIR=$PKG_DIR/models/$MODEL_NAME
@@ -25,7 +25,7 @@ echo "   🏷️  Creating model.config..."
 cat > "$MODEL_DIR/model.config" <<EOL
 <?xml version="1.0"?>
 <model>
-  <name>$MODEL_NAME</name>
+  <name>hexacopter_agricultural</name>
   <version>1.0</version>
   <sdf version="1.9">model.sdf</sdf>
   <author>
@@ -37,7 +37,7 @@ cat > "$MODEL_DIR/model.config" <<EOL
 EOL
 
 # 4. Create a Basic World if missing
-if [ ! -f "$WORLD_DIR/bihar_farm.sdf" ]; then
+if [ ! -f "$WORLD_DIR/bihar_farm.sdf" ] || [ ! -s "$WORLD_DIR/bihar_farm.sdf" ]; then
     echo "   🌾 Creating basic bihar_farm.sdf..."
     cat > "$WORLD_DIR/bihar_farm.sdf" <<EOL
 <?xml version="1.0" ?>
@@ -54,6 +54,16 @@ if [ ! -f "$WORLD_DIR/bihar_farm.sdf" ]; then
     <!-- Removed ogre2 tag to fix Sensor Missing error -->
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"></plugin>
     <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"></plugin>
+    <plugin filename="gz-sim-magnetometer-system" name="gz::sim::systems::Magnetometer"></plugin>
+    <plugin filename="gz-sim-air-pressure-system" name="gz::sim::systems::AirPressure"></plugin>
+
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <world_frame_orientation>ENU</world_frame_orientation>
+      <latitude_deg>25.3748</latitude_deg>
+      <longitude_deg>86.4735</longitude_deg>
+      <elevation>45.0</elevation>
+    </spherical_coordinates>
 
     <light type="directional" name="sun">
       <cast_shadows>true</cast_shadows>

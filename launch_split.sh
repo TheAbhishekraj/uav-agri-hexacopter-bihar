@@ -52,10 +52,11 @@ if [ ! -f "$HOME/uav_agricultural_drone_project/src/hexacopter_control/models/he
     exit 1
 fi
 
+# --- FIX: Sync World to PX4 ---
 if [ -d "$PX4_DIR/Tools/simulation/gz/worlds" ]; then
+    echo "   🔗 Linking bihar_farm.sdf to PX4 worlds directory..."
     rm "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf" 2>/dev/null
-    rm "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf.sdf" 2>/dev/null
-    cp "$HOME/uav_agricultural_drone_project/src/hexacopter_control/worlds/bihar_farm.sdf" "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf"
+    ln -sf "$HOME/uav_agricultural_drone_project/src/hexacopter_control/worlds/bihar_farm.sdf" "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf"
 fi
 
 # 3. Launch Components in Gnome Terminal Tabs
@@ -67,9 +68,9 @@ echo "🚀 Launching Bihar Agricultural Drone System..."
 # We use '--' to separate arguments for the command executed inside the tab.
 # Splitting into separate windows to prevent tab loading errors in Snap environments.
 
-gnome-terminal --window --title="1. Micro-XRCE-DDS" --geometry=80x24+0+0 -- bash -c "MicroXRCEAgent udp4 -p 8888; exec bash"
+gnome-terminal --window --title="1. Micro-XRCE-DDS" --geometry=80x24+0+0 -- bash -c "source ./setup_project_env.sh; MicroXRCEAgent udp4 -p 8888; exec bash"
 
-gnome-terminal --window --title="2. PX4 SITL (Bihar)" --geometry=80x24+0+350 -- bash -c "source ./setup_project_env.sh; cd \$PX4_DIR; export GZ_SIM_RESOURCE_PATH=\$HOME/uav_agricultural_drone_project/src/hexacopter_control/models:\$HOME/uav_agricultural_drone_project/src/hexacopter_control/worlds:\$GZ_SIM_RESOURCE_PATH; export PX4_GZ_WORLD=bihar_farm; export PX4_SIM_MODEL=hexacopter_agricultural; export PX4_HOME_LAT=25.3748; export PX4_HOME_LON=86.4735; export PX4_HOME_ALT=45.0; unset LD_LIBRARY_PATH; make px4_sitl gz_x500 -j2; exec bash"
+gnome-terminal --window --title="2. PX4 SITL (Bihar)" --geometry=80x24+0+350 -- bash -c "source ./setup_project_env.sh; cd \$PX4_DIR; export GZ_SIM_RESOURCE_PATH=\$HOME/uav_agricultural_drone_project/src/hexacopter_control/models:\$HOME/uav_agricultural_drone_project/src/hexacopter_control/worlds:\$GZ_SIM_RESOURCE_PATH; export GAZEBO_MODEL_PATH=\$HOME/uav_agricultural_drone_project/src/hexacopter_control/models:\$GAZEBO_MODEL_PATH; export PX4_GZ_WORLD=bihar_farm; export PX4_SIM_MODEL=hexacopter_agricultural; export PX4_HOME_LAT=25.3748; export PX4_HOME_LON=86.4735; export PX4_HOME_ALT=45.0; unset LD_LIBRARY_PATH; make px4_sitl gz_x500 -j2; exec bash"
 
 gnome-terminal --window --title="3. QGroundControl" --geometry=80x24+600+0 -- bash -c "echo 'Waiting for PX4 to boot...'; sleep 10; ./QGroundControl.AppImage; exec bash"
 

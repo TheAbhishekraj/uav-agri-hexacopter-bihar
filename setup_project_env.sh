@@ -3,6 +3,9 @@
 # Connects the uav_agricultural_drone_project to the central DronePhD_Lab tools.
 # Usage: source ./setup_project_env.sh
 
+# Get the directory where this script is located
+ENV_PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # 1. Verify ROS 2: Check if ROS 2 Jazzy is active. If not, source it.
 if [ -z "$ROS_DISTRO" ]; then
     if [ -f "/opt/ros/jazzy/setup.bash" ]; then
@@ -28,12 +31,17 @@ if [ ! -d "$LAB_PX4_PATH" ]; then
 fi
 
 # 3. Prevent Duplicates: Check if there is a PX4-Autopilot folder inside my current project.
-if [ -d "$HOME/uav_agricultural_drone_project/PX4-Autopilot" ]; then
+if [ -d "$ENV_PROJECT_ROOT/PX4-Autopilot" ]; then
     echo "⚠️  WARNING: Duplicate PX4-Autopilot folder detected in this project!"
-    echo "   Please remove '$HOME/uav_agricultural_drone_project/PX4-Autopilot' to ensure you use the Lab version."
+    echo "   Please remove '$ENV_PROJECT_ROOT/PX4-Autopilot' to ensure you use the Lab version."
 fi
 
 # 4. Set Variables: Export the PX4_DIR variable.
 export PX4_DIR="$LAB_PX4_PATH"
 echo "✅ PX4_DIR set to: $PX4_DIR"
+
+# 5. Gazebo Resource Paths
+export GZ_SIM_RESOURCE_PATH="$ENV_PROJECT_ROOT/src/hexacopter_control/models:$ENV_PROJECT_ROOT/src/hexacopter_control/worlds:$GZ_SIM_RESOURCE_PATH"
+export GAZEBO_MODEL_PATH="$ENV_PROJECT_ROOT/src/hexacopter_control/models:$GAZEBO_MODEL_PATH"
+
 echo "🚀 Project environment configured successfully."

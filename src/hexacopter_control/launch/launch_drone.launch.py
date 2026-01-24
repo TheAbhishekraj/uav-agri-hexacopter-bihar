@@ -1,3 +1,8 @@
+# =================================================================
+# Launch File: launch_drone.launch.py
+# Purpose: Orchestrates Gazebo Sim and spawns the Hexacopter model
+# =================================================================
+
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -11,14 +16,13 @@ def generate_launch_description():
     # Find the ROS Gazebo Sim package
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
 
-    # Dynamic Path Resolution (Best Practice)
-    # Note: Ensure 'hexacopter_control' is built and sourced, or GAZEBO_MODEL_PATH is set.
-    # If running from source without install, we rely on the environment variables set in launch_split.sh
-    # but here we define the standard ROS 2 way to find assets.
+    # Dynamic Path Resolution: Uses FindPackageShare to locate assets relative to the install prefix
+    # This replaces hardcoded /home/user paths for portability.
     pkg_share = FindPackageShare('hexacopter_control')
-    world_path = PathJoinSubstitution([pkg_share, 'worlds', 'bihar_farm.world'])
+    world_path = PathJoinSubstitution([pkg_share, 'worlds', 'bihar_farm.sdf'])
     model_path = PathJoinSubstitution([pkg_share, 'models', 'hexacopter_agricultural', 'model.sdf'])
 
+    # 1. Include the standard Gazebo Sim launch description
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')

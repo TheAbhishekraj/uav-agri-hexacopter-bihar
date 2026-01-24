@@ -1,14 +1,8 @@
 #!/bin/bash
 
 # Project Paths
-WORKSPACE_DIR=~/uav_agricultural_drone_project
+WORKSPACE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PX4_DIR=~/DronePhD_Lab/PX4/PX4-Autopilot
-
-# --- FIX: Sanitize Environment ---
-unset LD_LIBRARY_PATH
-unset LD_PRELOAD
-unset GTK_PATH
-unset GIO_EXTRA_MODULES
 
 # Safety Check: Ensure not in virtual environment
 if [[ "$VIRTUAL_ENV" != "" ]]; then
@@ -47,16 +41,18 @@ fi
 # --- FIX: Symlink World ---
 rm "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf" 2>/dev/null
 rm "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf.sdf" 2>/dev/null
-cp "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf" "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf"
+ln -sf "$WORKSPACE_DIR/src/hexacopter_control/worlds/bihar_farm.sdf" "$PX4_DIR/Tools/simulation/gz/worlds/bihar_farm.sdf"
+
+LAUNCH_CMD="env -u LD_LIBRARY_PATH -u LD_PRELOAD -u GTK_PATH -u GIO_EXTRA_MODULES gnome-terminal --window"
 
 # 1. Micro-XRCE-DDS Agent (New Window)
-gnome-terminal --window --title="Micro-XRCE-DDS Agent" --geometry=100x24+0+0 -- bash -c "
+$LAUNCH_CMD --title="Micro-XRCE-DDS Agent" --geometry=100x24+0+0 -- bash -c "
 echo 'Starting Agent...';
 MicroXRCEAgent udp4 -p 8888; 
 exec bash"
 
 # 2. PX4 SITL (New Window)
-gnome-terminal --window --title="PX4 SITL" --geometry=80x24+0+350 -- bash -c "
+$LAUNCH_CMD --title="PX4 SITL" --geometry=80x24+0+350 -- bash -c "
 echo 'Starting PX4 SITL...';
 source /opt/ros/jazzy/setup.bash;
 cd $PX4_DIR;
@@ -65,15 +61,15 @@ export HEADLESS=0;
 # Tell Gazebo where to find the custom Hexacopter & Bihar Farm
 export GZ_SIM_RESOURCE_PATH=$WORKSPACE_DIR/src/hexacopter_control/models:$WORKSPACE_DIR/src/hexacopter_control/worlds:\$GZ_SIM_RESOURCE_PATH
 export PX4_GZ_WORLD=bihar_farm
-export PX4_SIM_MODEL=hexacopter_agricultural
+export PX4_GZ_MODEL=hexacopter_agricultural
 
 # Set Location to Munger, Bihar
 export PX4_HOME_LAT=25.3748
 export PX4_HOME_LON=86.4735
 export PX4_HOME_ALT=45.0
 
-unset LD_LIBRARY_PATH
-make px4_sitl gz_x500 -j2;
+unset LD_LIBRARY_PATH; sleep 5
+PX4_SYS_AUTOSTART=4001 make px4_sitl gz_x500 -j2;
 exec bash"
 
 # 3. QGroundControl (New Window)
@@ -88,7 +84,8 @@ if [ ! -f "$WORKSPACE_DIR/QGroundControl.AppImage" ]; then
     fi
 fi
 
-gnome-terminal --window --title="QGroundControl" --geometry=80x24+600+0 -- bash -c "
+$LAUNCH_CMD --title="QGroundControl" --geometry=80x24+600+0 -- bash -c "
+unset LD_LIBRARY_PATH; unset LD_PRELOAD; unset GTK_PATH; unset GIO_EXTRA_MODULES;
 if [ -f \"$WORKSPACE_DIR/QGroundControl.AppImage\" ]; then
     echo 'Waiting for PX4 to initialize MAVLink...'; sleep 10;
     echo 'Starting QGC...';
@@ -99,7 +96,7 @@ fi
 exec bash"
 
 # 4. ROS 2 Mission (New Window)
-gnome-terminal --window --title="ROS 2 Mission" --geometry=80x24+600+350 -- bash -c "
+$LAUNCH_CMD --title="ROS 2 Mission" --geometry=80x24+600+350 -- bash -c "
 source /opt/ros/jazzy/setup.bash;
 source $WORKSPACE_DIR/install/setup.bash;
 cd $WORKSPACE_DIR;
